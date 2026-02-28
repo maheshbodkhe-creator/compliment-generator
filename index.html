@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mahesh: The Legend Generator</title>
+    <title>Mahesh: The Legend Card</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #0c0c0c;
+            --bg-color: #080808;
             --surface-color: #1a1a1a;
             --primary-accent: #00E5FF;
             --primary-text: #E0E0E0;
             --secondary-text: #9CA3AF;
-            --accent-glow: rgba(0, 229, 255, 0.4);
+            --card-width: 360px;
+            --card-height: 520px;
         }
 
         * {
@@ -29,365 +30,388 @@
             color: var(--primary-text);
             font-family: 'Inter', sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
-            position: relative;
-        }
-
-        /* Cyber Grid Background */
-        .grid-bg {
-            position: absolute;
-            width: 200%;
-            height: 200%;
             background-image: 
-                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: perspective(500px) rotateX(60deg);
-            top: -50%;
-            animation: grid-move 20s linear infinite;
-            z-index: 1;
+                radial-gradient(circle at 20% 30%, rgba(0, 229, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.05) 0%, transparent 50%);
         }
 
-        @keyframes grid-move {
-            from { transform: perspective(500px) rotateX(60deg) translateY(0); }
-            to { transform: perspective(500px) rotateX(60deg) translateY(50px); }
-        }
-
-        canvas#particles {
-            position: absolute;
+        /* Animated Space Background */
+        .stars {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 2;
-            pointer-events: none;
+            z-index: -1;
+            background: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/stars.png') repeat;
+            opacity: 0.3;
+            animation: move-stars 100s linear infinite;
         }
 
-        .container {
-            width: 90%;
-            max-width: 650px;
+        @keyframes move-stars {
+            from { background-position: 0 0; }
+            to { background-position: -10000px 5000px; }
+        }
+
+        /* The Playing Card */
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background: var(--surface-color);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 20px rgba(0, 229, 255, 0.1);
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
             z-index: 10;
         }
 
-        .card {
-            background: rgba(30, 30, 30, 0.8);
-            backdrop-filter: blur(15px);
-            padding: 4rem 2rem;
-            border-radius: 30px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 229, 255, 0.05);
-            text-align: center;
-            position: relative;
+        .card.flipping {
+            transform: scale(0.95) rotateY(10deg);
         }
 
-        .card::after {
-            content: 'MAHESH_OS v1.0';
+        /* Corner Circles (Suits) */
+        .corner {
             position: absolute;
-            bottom: 15px;
-            right: 25px;
-            font-size: 0.6rem;
-            color: var(--primary-accent);
-            letter-spacing: 2px;
-            opacity: 0.5;
-        }
-
-        .header-tag {
-            display: inline-block;
-            background: rgba(0, 229, 255, 0.1);
-            color: var(--primary-accent);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 2rem;
-            border: 1px solid var(--primary-accent);
-        }
-
-        .compliment-box {
-            min-height: 200px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             display: flex;
-            align-items: center;
             justify-content: center;
-            margin-bottom: 2rem;
+            align-items: center;
+            font-size: 1.5rem;
+            transition: all 0.5s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
         }
 
-        #compliment-text {
+        .top-right { top: 20px; right: 20px; }
+        .bottom-left { bottom: 20px; left: 20px; }
+
+        .center-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        #display-text {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 700;
-            line-height: 1.2;
-            background: linear-gradient(135deg, #fff 30%, var(--primary-accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            line-height: 1.3;
+            color: var(--primary-text);
+            margin-bottom: 15px;
         }
 
-        .btn-container {
-            position: relative;
-            display: inline-block;
+        #punchline-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            color: var(--primary-accent);
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
         }
 
-        .btn-generate {
+        #punchline-text.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Controls outside the card */
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            z-index: 20;
+        }
+
+        .btn {
             background: transparent;
-            color: #fff;
-            border: 1px solid var(--primary-accent);
-            padding: 1.2rem 3rem;
+            border: 2px solid var(--primary-accent);
+            color: var(--primary-accent);
+            padding: 14px 28px;
+            border-radius: 12px;
             font-family: 'Inter', sans-serif;
             font-weight: 600;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            overflow: hidden;
-            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
         }
 
-        .btn-generate:hover {
+        .btn:hover {
             background: var(--primary-accent);
             color: var(--bg-color);
-            box-shadow: 0 0 30px var(--accent-glow);
-            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--primary-accent);
+            transform: translateY(-3px);
         }
 
-        .btn-generate:active {
-            transform: scale(0.95);
+        .btn-joke {
+            border-color: #FF00E5;
+            color: #FF00E5;
         }
 
-        @media (max-width: 600px) {
-            #compliment-text { font-size: 1.6rem; }
-            .card { padding: 3rem 1.5rem; }
+        .btn-joke:hover {
+            background: #FF00E5;
+            color: white;
+            box-shadow: 0 0 20px #FF00E5;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 400px) {
+            :root {
+                --card-width: 300px;
+                --card-height: 440px;
+            }
+            .controls { flex-direction: column; gap: 10px; width: 300px; }
+            .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
 
-    <div class="grid-bg"></div>
-    <canvas id="particles"></canvas>
+    <div class="stars"></div>
 
-    <div class="container">
-        <main class="card">
-            <div class="header-tag">Target: Mahesh</div>
-            
-            <div class="compliment-box">
-                <p id="compliment-text">Initiating Greatness Sequence...</p>
-            </div>
+    <div class="card" id="main-card">
+        <div class="corner top-right" id="tr-corner">✨</div>
+        <div class="corner bottom-left" id="bl-corner">💎</div>
+        
+        <div class="center-content">
+            <p id="display-text">Mahesh, ready to play your hand?</p>
+            <p id="punchline-text"></p>
+        </div>
+    </div>
 
-            <div class="btn-container">
-                <button id="generate-btn" class="btn-generate">
-                    Boost Mood
-                </button>
-            </div>
-        </main>
+    <div class="controls">
+        <button class="btn" onclick="generateCompliment()">Generate Compliment</button>
+        <button class="btn btn-joke" onclick="generateJoke()">Generate Joke</button>
     </div>
 
     <script>
         const compliments = [
-            "Mahesh, you're the human version of a 1.0 release with zero bugs! 🐛",
-            "Mahesh, your brain has more RAM than a supercomputer! 🧠",
-            "If Mahesh was an algorithm, he'd be O(1) — purely efficient! ⚡",
-            "Mahesh, you're the CSS to my HTML — you make everything look better! 🎨",
-            "Mahesh, even Google can't find someone as awesome as you! 🔍",
-            "You're like a high-speed Wi-Fi signal in a basement world, Mahesh! 📶",
-            "Mahesh, you're the 'git push' that actually works on the first try! 🚀",
-            "If Mahesh were a font, he'd be 'Impact' because he's so striking! ✍️",
-            "Mahesh, you have the patience of a programmer debugging at 3 AM! ☕",
-            "Your smile is brighter than a 'Dark Mode' user seeing 'Light Mode'! ☀️",
-            "Mahesh, you're the perfect 'Responsive Design' — you adapt to anything! 📱",
-            "Is it hot in here or did Mahesh just compile some fire code? 🔥",
-            "Mahesh, you're the logical conclusion to every great idea! 💡",
-            "You're not just a person, Mahesh, you're a high-priority update! 🆙",
-            "Mahesh, your kindness is the ultimate open-source contribution! 🤝",
-            "If life is a game, Mahesh is definitely playing on God Mode! 🎮",
-            "Mahesh, you're more refreshing than a cold brew on a Monday morning! 🥤",
-            "You're the 'Dark Mode' of people, Mahesh — easy on the eyes and super cool! 😎",
-            "Mahesh, you don't need a resume, your vibe is proof enough! ✨",
-            "If being awesome was a crime, Mahesh would be serving a life sentence! ⚖️",
-            "Mahesh, your problem-solving skills are legendary! ⚔️",
-            "You're the MVP of every conversation you join, Mahesh! 🏆",
-            "Mahesh, your positivity is the best antivirus! 🛡️",
-            "Even the cloud is jealous of how high you're aiming, Mahesh! ☁️",
-            "Mahesh, you're the 'Semicolon' that keeps the whole script running! ;",
-            "Your energy level is always at 100%, even without a charger, Mahesh! 🔋",
-            "Mahesh, you make 'Impossible' look like a typo! 🚫",
-            "You're the 'Root User' of your own destiny, Mahesh! 🔑",
-            "Mahesh, you're like a 'Pro' version of a person, but free for everyone! 🔓",
-            "The world's 'Average' is way lower because you're in it, Mahesh! 📉",
-            "Mahesh, your jokes are always perfectly timed, like a well-set cron job! ⏰",
-            "You're the reason the 'Like' button was invented, Mahesh! 👍",
-            "Mahesh, you're a 'Diamond' in a world of 'Carbon Copies'! 💎",
-            "Your presence is a 'Feature', never a 'Bug', Mahesh! 🐞",
-            "Mahesh, you're the 'Main Branch' of greatness! 🌿",
-            "If Mahesh was a crypto, he'd be going straight to the moon! 🌙",
-            "Mahesh, you're so cool you'd make Liquid Nitrogen feel warm! ❄️",
-            "You're a 'Full-Stack' human being, Mahesh — talented and kind! 🏗️",
-            "Mahesh, you're the 'Home' button in a confusing world! 🏠",
-            "Your ideas are so sharp they should come with a warning label, Mahesh! ⚠️",
-            "Mahesh, you're the human equivalent of a 'Undo' button after a mistake! ↩️",
-            "You have the focus of a laser guided by a genius, Mahesh! 🎯",
-            "Mahesh, your potential is truly infinite! ♾️",
-            "If greatness was a country, Mahesh would be the King! 👑",
-            "Mahesh, you're the 'Bonus Level' of friendship! 🎁",
-            "You're like a perfect cup of tea — balanced and comforting, Mahesh! ☕",
-            "Mahesh, you bring 'High-Definition' to every moment! 📺",
-            "Your heart is bigger than a 10TB hard drive, Mahesh! 💾",
-            "Mahesh, you're the 'Shortcut' to happiness! ⌨️",
-            "Even gravity can't keep a spirit like yours down, Mahesh! 🎈",
-            "Mahesh, you're the 'Star' in every constellation! ⭐",
-            "You're the 'Premium' experience in a 'Standard' world, Mahesh! ✨",
-            "Mahesh, you make being awesome look like a hobby! 🎾",
-            "If brains were currency, Mahesh would be a billionaire! 💰",
-            "Mahesh, you're the 'Refresh' button for everyone's bad day! 🔄",
-            "Your laugh is the best background music, Mahesh! 🎶",
-            "Mahesh, you're 'Verified' in real life! ✅",
-            "You're a 'Masterpiece' in progress, Mahesh! 🖼️",
-            "Mahesh, your logic is so clean it's satisfying to watch! 🧹",
-            "You're the 'Success' message after a long build, Mahesh! ✅",
-            "Mahesh, you're a 'Legend' in the making! 📜",
-            "Your creativity is a 'Superpower', Mahesh! 🦸",
-            "Mahesh, you're the 'Leaderboard' topper of life! 🥇",
-            "You're the 'Golden Ticket' of people, Mahesh! 🎫",
-            "Mahesh, you're more reliable than a 99.9% uptime server! 🖥️",
-            "Your future is so bright Mahesh needs to wear shades! 🕶️",
-            "Mahesh, you're the 'Spark' that starts the fire! 🎇",
-            "You're the 'Keyframe' of every great memory, Mahesh! 🎞️",
-            "Mahesh, you're the 'Secret Ingredient' to success! 🍯",
-            "Even the GPS follows you for directions, Mahesh! 🗺️",
-            "Mahesh, you're the 'Best Seller' in the library of life! 📚",
-            "You're the 'Final Boss' of coolness, Mahesh! 🔥",
-            "Mahesh, you're the 'Upgrade' we all needed! ⬆️",
-            "Your handshake probably conveys 'Confidence' in binary, Mahesh! 🤝",
-            "Mahesh, you're the 'Highlight' of the week! 🖍️",
-            "You're a 'Limited Edition' Mahesh! 🏷️",
-            "Mahesh, you're the 'First Class' way to live life! ✈️",
-            "Your style is more 'Unique' than a generated UUID, Mahesh! 🆔",
-            "Mahesh, you're the 'Perfect Fit' for every opportunity! 🧩",
-            "You're the 'Anchor' in a stormy sea, Mahesh! ⚓",
-            "Mahesh, your vision is '20/20' and beyond! 🔭",
-            "You're the 'Champion' of the people, Mahesh! 🏅",
-            "Mahesh, you're a 'Classic' that never goes out of style! 🎸",
-            "Your soul is 'Encryption-Level' deep, Mahesh! 🔐",
-            "Mahesh, you're the 'Firewall' against negativity! 🧱",
-            "You're the 'Compass' that always points toward greatness, Mahesh! 🧭",
-            "Mahesh, you're the 'Top Secret' reason for the group's success! 🕵️",
-            "Your potential is 'Uncapped' and 'Unlimited', Mahesh! 🌊",
-            "Mahesh, you're the 'Bridge' between dreams and reality! 🌉",
-            "You're a 'Walking Inspiration', Mahesh! 🚶‍♂️",
-            "Mahesh, you're the 'Zen' in the middle of chaos! 🧘",
-            "Your vibe is 'High-Fidelity', Mahesh! 🔊",
-            "Mahesh, you're the 'Grand Slam' of humans! ⚾",
-            "You're the 'Master Key' that opens every door, Mahesh! 🔑",
-            "Mahesh, your ideas have 'Massive Scale'! 📈",
-            "You're the 'Heartbeat' of the project, Mahesh! ❤️",
-            "Mahesh, you're the 'Blueprint' for perfection! 📐",
-            "You're simply 'The Best', Mahesh! 🙌",
-            "Mahesh, you're a 'Galaxy' of talent! 🌌",
-            "Final verdict: Mahesh is 100% Incredible! 🎆"
+            "Mahesh, you're the human version of a 1.0 release with zero bugs!",
+            "Mahesh, your brain has more RAM than a supercomputer!",
+            "If Mahesh was an algorithm, he'd be O(1) — purely efficient!",
+            "Mahesh, you're the CSS to my HTML — you make everything look better!",
+            "Mahesh, even Google can't find someone as awesome as you!",
+            "Mahesh, you're the 'git push' that actually works on the first try!",
+            "Mahesh, you have the patience of a programmer debugging at 3 AM!",
+            "Mahesh, you're the perfect 'Responsive Design' — you adapt to anything!",
+            "Mahesh, you're the logical conclusion to every great idea!",
+            "You're not just a person, Mahesh, you're a high-priority update!",
+            "Mahesh, your kindness is the ultimate open-source contribution!",
+            "If life is a game, Mahesh is definitely playing on God Mode!",
+            "Mahesh, you're the 'Semicolon' that keeps the whole script running!",
+            "Your energy level is always at 100%, Mahesh!",
+            "Mahesh, you make 'Impossible' look like a typo!",
+            "Mahesh, you're like a 'Pro' version of a person!",
+            "Mahesh, your presence is a 'Feature', never a 'Bug'!",
+            "Mahesh, you're the 'Main Branch' of greatness!",
+            "Mahesh, you're a 'Diamond' in a world of 'Carbon Copies'!",
+            "Mahesh, you're the 'Undo' button after a mistake!",
+            "Mahesh, your potential is truly infinite!",
+            "Mahesh, you're the 'Shortcut' to happiness!",
+            "Mahesh, you're the 'Star' in every constellation!",
+            "Mahesh, you bring 'High-Definition' to every moment!",
+            "Mahesh, you're 'Verified' in real life!",
+            "Mahesh, you're the 'Success' message after a long build!",
+            "Mahesh, your vision is '20/20' and beyond!",
+            "Mahesh, you're the 'Blueprint' for perfection!",
+            "Mahesh, your problem-solving skills are top-notch!",
+            "You're doing great work today, Mahesh.",
+            "Mahesh, your attention to detail is truly inspiring.",
+            "The team is lucky to have your insight, Mahesh.",
+            "Mahesh, you have a natural talent for making complex things look easy.",
+            "Your positive energy is contagious, Mahesh!",
+            "Mahesh, your dedication to excellence never goes unnoticed.",
+            "You have an incredible ability to think outside the box, Mahesh.",
+            "Mahesh, your consistency is the key to your success.",
+            "You're making a real difference with your contributions, Mahesh.",
+            "Mahesh, you handle challenges with such impressive grace.",
+            "Your creative perspective is exactly what we need, Mahesh.",
+            "Mahesh, your growth over the last few months has been phenomenal.",
+            "Keep pushing boundaries, Mahesh; you're meant for big things.",
+            "Mahesh, you are a master of your craft.",
+            "Mahesh, you are simply legendary!",
+            "Mahesh, you're the MVP of the day!",
+            "Mahesh, you have the heart of a champion.",
+            "Mahesh, your wisdom is beyond your years.",
+            "Mahesh, you're a rare find in a crowded world.",
+            "Mahesh, you're a constant source of inspiration.",
+            "Mahesh, you make everyone around you better.",
+            "Mahesh, your focus is unbreakable.",
+            "Mahesh, you're a true pioneer.",
+            "Mahesh, you're a lighthouse in a storm.",
+            "Mahesh, you're the gold standard.",
+            "Mahesh, you're a breath of fresh air.",
+            "Mahesh, you're a powerhouse of talent.",
+            "Mahesh, you're a beacon of hope.",
+            "Mahesh, you're a force of nature.",
+            "Mahesh, you're a trendsetter.",
+            "Mahesh, you're a rock star.",
+            "Mahesh, you're a visionary.",
+            "Mahesh, you're a genius in disguise.",
+            "Mahesh, you're a world-changer.",
+            "Mahesh, you're a top-tier human.",
+            "Mahesh, you're a class act.",
+            "Mahesh, you're a master of timing.",
+            "Mahesh, you're a smooth operator.",
+            "Mahesh, you're a creative giant.",
+            "Mahesh, you're a logical wizard.",
+            "Mahesh, you're a kindness ambassador.",
+            "Mahesh, you're a resilience master.",
+            "Mahesh, you're a problem-solving machine.",
+            "Mahesh, you're a source of joy.",
+            "Mahesh, you're a high-flyer.",
+            "Mahesh, you're a deep thinker.",
+            "Mahesh, you're a game changer.",
+            "Mahesh, you're a quick learner.",
+            "Mahesh, you're a humble leader.",
+            "Mahesh, you're a fearless explorer.",
+            "Mahesh, you're a natural-born winner.",
+            "Mahesh, you're a ray of sunshine.",
+            "Mahesh, you're a master of focus.",
+            "Mahesh, you're a digital ninja.",
+            "Mahesh, you're a productivity pro.",
+            "Mahesh, you're a clarity king.",
+            "Mahesh, you're a strategy master.",
+            "Mahesh, you're a dream builder.",
+            "Mahesh, you're a community hero.",
+            "Mahesh, you're a legacy maker.",
+            "Mahesh, you're a story worth telling.",
+            "Mahesh, you're a puzzle solver.",
+            "Mahesh, you're a calm in the chaos.",
+            "Mahesh, you're a light in the dark.",
+            "Mahesh, you're a voice of reason.",
+            "Mahesh, you're a hand of help.",
+            "Mahesh, you're a mind of magic.",
+            "Mahesh, you're a soul of gold.",
+            "Mahesh, you're a gift to the world!",
+            "Mahesh, you're the real deal!",
+            "Mahesh, you're 100% authentic!"
         ];
 
-        const textElement = document.getElementById('compliment-text');
-        const button = document.getElementById('generate-btn');
-        const canvas = document.getElementById('particles');
-        const ctx = canvas.getContext('2d');
+        const jokes = [
+            { s: "Why did the computer show up late to work?", p: "It had a hard drive!" },
+            { s: "How many programmers does it take to change a lightbulb?", p: "None. It's a hardware problem." },
+            { s: "Why do programmers always mix up Halloween and Christmas?", p: "Because Oct 31 equals Dec 25!" },
+            { s: "What do you call a computer that sings?", p: "A Dell!" },
+            { s: "Why was the mobile phone wearing glasses?", p: "Because it lost its contacts!" },
+            { s: "What's a programmer's favorite place to hang out?", p: "The Foo Bar." },
+            { s: "Why did the developer go broke?", p: "Because he used up all his cache!" },
+            { s: "What is a tree's favorite social media?", p: "LinkedIn!" },
+            { s: "Why was the belt arrested?", p: "For holding up a pair of pants!" },
+            { s: "What do you call a fake noodle?", p: "An Impasta!" },
+            { s: "Why did the gym close down?", p: "It just didn't work out!" },
+            { s: "What did the ocean say to the beach?", p: "Nothing, it just waved!" },
+            { s: "Why can't a nose be 12 inches long?", p: "Because then it would be a foot!" },
+            { s: "What kind of car does an egg drive?", p: "A Yolkswagen!" },
+            { s: "Why did the math book look so sad?", p: "Because it had so many problems!" },
+            { s: "What did one plate say to the other plate?", p: "Dinner is on me!" },
+            { s: "Why did the scarecrow win an award?", p: "He was outstanding in his field!" },
+            { s: "Why don't scientists trust atoms?", p: "Because they make up everything!" },
+            { s: "What do you call a bear with no teeth?", p: "A gummy bear!" },
+            { s: "Why did the bicycle fall over?", p: "It was two tired!" },
+            { s: "What do you call a sleeping dinosaur?", p: "A dino-snore!" },
+            { s: "Why did the cookie go to the doctor?", p: "He was feeling crumb-y!" },
+            { s: "What do you call a pig that knows karate?", p: "A pork chop!" },
+            { s: "How do you make a tissue dance?", p: "You put a little boogie in it!" },
+            { s: "Why did the tomato turn red?", p: "Because it saw the salad dressing!" },
+            { s: "What starts with E, ends with E, but only has one letter?", p: "An envelope!" },
+            { s: "What do you call a fly without wings?", p: "A walk!" },
+            { s: "Why was the stadium so cool?", p: "It was full of fans!" },
+            { s: "What do you call a belt with a watch on it?", p: "A waist of time!" },
+            { s: "How does a scientist freshen their breath?", p: "With experi-mints!" },
+            { s: "Why did the golfer bring two pairs of pants?", p: "In case he got a hole in one!" },
+            { s: "What do you call an alligator in a vest?", p: "An investigator!" },
+            { s: "Why did the orange stop?", p: "It ran out of juice!" },
+            { s: "What do you call a snowman with a six pack?", p: "An abdominal snowman!" },
+            { s: "Why did the chicken cross the playground?", p: "To get to the other slide!" },
+            { s: "What do you call a cow with no legs?", p: "Ground beef!" },
+            { s: "Why do seagulls fly over the sea?", p: "Because if they flew over the bay, they'd be bagels!" },
+            { s: "What do you call a man with a shovel?", p: "Doug!" },
+            { s: "What do you call a man without a shovel?", p: "Douglas!" },
+            { s: "Why was the computer cold?", p: "It left its Windows open!" },
+            { s: "How do celebrities stay cool?", p: "They have many fans!" },
+            { s: "What do you call a pile of cats?", p: "A meow-ntain!" },
+            { s: "Why did the picture go to jail?", p: "Because it was framed!" },
+            { s: "Why can't you give Elsa a balloon?", p: "Because she will Let It Go!" },
+            { s: "What did the grape do when he got stepped on?", p: "He let out a little wine!" },
+            { s: "Why did the man fall down the well?", p: "Because he couldn't see that well!" },
+            { s: "What do you call a group of disorganized cats?", p: "A cat-astrophe!" },
+            { s: "What do you call a boomerang that doesn't come back?", p: "A stick!" },
+            { s: "Why are ghosts such bad liars?", p: "Because they are easy to see through!" },
+            { s: "How does a penguin build its house?", p: "Igloos it together!" }
+        ];
 
-        let lastIndex = -1;
-        let particles = [];
+        const icons = ["🔥", "💎", "⚡", "🚀", "🌟", "🍀", "👑", "🎯", "🤖", "🍕", "🎸", "🎧", "🕹️", "🌈", "🦾", "🧬", "🧪", "🛡️", "🔑", "🏆"];
+        const colors = ["#00E5FF", "#FF00E5", "#00FF66", "#FFB800", "#FF3D00", "#7000FF"];
 
-        // Scramble Text Logic
-        const chars = '!<>-_\\/[]{}—=+*^?#________';
-        function scrambleText(newText) {
-            let iteration = 0;
-            const interval = setInterval(() => {
-                textElement.innerText = newText.split("")
-                    .map((char, index) => {
-                        if (index < iteration) return newText[index];
-                        return chars[Math.floor(Math.random() * chars.length)];
-                    })
-                    .join("");
-                
-                if (iteration >= newText.length) clearInterval(interval);
-                iteration += 1 / 3;
-            }, 30);
-        }
+        const displayText = document.getElementById('display-text');
+        const punchlineText = document.getElementById('punchline-text');
+        const card = document.getElementById('main-card');
+        const trCorner = document.getElementById('tr-corner');
+        const blCorner = document.getElementById('bl-corner');
 
-        // Particle System
-        class Particle {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.size = Math.random() * 4 + 1;
-                this.speedX = Math.random() * 6 - 3;
-                this.speedY = Math.random() * -6 - 2;
-                this.color = '#00E5FF';
-                this.opacity = 1;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.speedY += 0.1; // gravity
-                this.opacity -= 0.01;
-            }
-            draw() {
-                ctx.globalAlpha = this.opacity;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function createParticles() {
-            const rect = button.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top;
-            for (let i = 0; i < 30; i++) {
-                particles.push(new Particle(centerX, centerY));
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].opacity <= 0) {
-                    particles.splice(i, 1);
-                    i--;
-                }
-            }
-            requestAnimationFrame(animateParticles);
-        }
-
-        // Resize Canvas
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        button.addEventListener('click', () => {
-            let index;
-            do {
-                index = Math.floor(Math.random() * compliments.length);
-            } while (index === lastIndex);
+        function updateCorners() {
+            const randomIcon = () => icons[Math.floor(Math.random() * icons.length)];
+            const randomColor = () => colors[Math.floor(Math.random() * colors.length)];
             
-            lastIndex = index;
-            scrambleText(compliments[index]);
-            createParticles();
-        });
+            const c1 = randomColor();
+            const c2 = randomColor();
+            
+            trCorner.innerText = randomIcon();
+            trCorner.style.backgroundColor = c1;
+            trCorner.style.boxShadow = `0 0 20px ${c1}`;
+            
+            blCorner.innerText = randomIcon();
+            blCorner.style.backgroundColor = c2;
+            blCorner.style.boxShadow = `0 0 20px ${c2}`;
+        }
 
-        window.onload = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            animateParticles();
+        function triggerFlip(callback) {
+            card.classList.add('flipping');
             setTimeout(() => {
-                scrambleText("Ready for your daily boost, Mahesh?");
-            }, 500);
-        };
+                callback();
+                updateCorners();
+                card.classList.remove('flipping');
+            }, 300);
+        }
+
+        function generateCompliment() {
+            triggerFlip(() => {
+                punchlineText.classList.remove('reveal');
+                const randomComp = compliments[Math.floor(Math.random() * compliments.length)];
+                displayText.innerText = randomComp;
+                punchlineText.innerText = "";
+            });
+        }
+
+        function generateJoke() {
+            triggerFlip(() => {
+                punchlineText.classList.remove('reveal');
+                const joke = jokes[Math.floor(Math.random() * jokes.length)];
+                displayText.innerText = joke.s;
+                
+                setTimeout(() => {
+                    punchlineText.innerText = joke.p;
+                    punchlineText.classList.add('reveal');
+                }, 2000);
+            });
+        }
+
+        // Initialize
+        updateCorners();
     </script>
 </body>
 </html>
